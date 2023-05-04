@@ -1,0 +1,108 @@
+package com.photoeditor.filters.collagemaker.feature_cropimages.preferences.frames.edit
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import com.photoeditor.filters.collagemaker.cropimages.imagecropper.models.AspectRatio
+import com.photoeditor.filters.collagemaker.cropimages.imagecropper.models.PolygonCropShape
+import com.photoeditor.filters.collagemaker.cropimages.imagecropper.utils.createPolygonShape
+import com.photoeditor.filters.collagemaker.cropimages.imagecropper.utils.drawOutlineWithBlendModeAndChecker
+import com.photoeditor.filters.collagemaker.feature_cropimages.preferences.CropTextField
+import com.photoeditor.filters.collagemaker.feature_cropimages.preferences.SliderWithValueSelection
+
+@Composable
+internal fun PolygonCropShapeEdit(
+    aspectRatio: AspectRatio,
+    dstBitmap: ImageBitmap,
+    title: String,
+    polygonCropShape: PolygonCropShape,
+    onChange: (PolygonCropShape) -> Unit
+) {
+
+    var newTitle by remember {
+        mutableStateOf(title)
+    }
+
+    val polygonProperties = remember {
+        polygonCropShape.polygonProperties
+    }
+
+    var sides by remember {
+        mutableStateOf(
+            polygonProperties.sides
+        )
+    }
+
+    var angle by remember {
+        mutableStateOf(
+            polygonProperties.angle
+        )
+    }
+
+    var shape by remember {
+        mutableStateOf(
+            polygonCropShape.shape
+        )
+    }
+
+    onChange(
+        polygonCropShape.copy(
+            polygonProperties = polygonProperties.copy(
+                sides = sides,
+                angle = angle
+            ),
+            title = newTitle,
+            shape = shape
+        )
+    )
+
+    Column {
+
+        val density = LocalDensity.current
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(4 / 3f)
+                .clipToBounds()
+                .drawOutlineWithBlendModeAndChecker(
+                    aspectRatio,
+                    shape,
+                    density,
+                    dstBitmap
+                )
+        )
+
+        CropTextField(
+            value = newTitle,
+            onValueChange = { newTitle = it }
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        SliderWithValueSelection(
+            value = sides.toFloat(),
+            title="Sides",
+            text = "$sides",
+            onValueChange = {
+                sides = it.toInt()
+                shape = createPolygonShape(sides = sides, angle)
+            },
+            valueRange = 3f..15f
+        )
+
+        SliderWithValueSelection(
+            value = angle,
+            title="Angle",
+            text = "${angle.toInt()}°",
+            onValueChange = {
+                angle = it
+                shape = createPolygonShape(sides = sides, degrees = angle)
+            },
+            valueRange = 0f..360f
+        )
+    }
+}
